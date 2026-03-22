@@ -34,3 +34,9 @@ def read_root():
     if os.path.exists(index_path):
         return FileResponse(index_path)
     return {"message": "Frontend not yet initialized. API running at /docs"}
+
+if __name__ == "__main__":
+    import uvicorn
+    # Use PORT from env, default to 8082
+    port = int(os.environ.get("PORT", 8082))
+    uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=True)

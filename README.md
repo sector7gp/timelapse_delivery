@@ -34,7 +34,7 @@ mkdir -p /tmp/videos/sample
 
 5. Iniciar el servidor:
 ```bash
-uvicorn backend.main:app --reload
+python3 -m backend.main
 ```
 
 ## Uso

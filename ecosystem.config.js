@@ -1,15 +1,17 @@
 module.exports = {
   apps : [{
     name: "timelapse_delivery",
-    script: "-m backend.main",
+    script: "backend/main.py",
     interpreter: "./venv/bin/python3",
-    cwd: "./", // Asegura que el directorio de trabajo sea la raíz
+    cwd: "./",
     env: {
       NODE_ENV: "development",
-      TZ: "America/Argentina/Buenos_Aires" // Para que los logs coincidan con tu hora
+      PYTHONPATH: ".", // Agregamos la raíz al path de Python para que los imports funcionen
+      TZ: "America/Argentina/Buenos_Aires"
     },
     env_production: {
       NODE_ENV: "production",
+      PYTHONPATH: "."
     }
   }]
 }

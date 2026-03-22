@@ -26,6 +26,11 @@ def login_for_access_token(db: Session = Depends(database.get_db), form_data: OA
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
+@router.get("/auth/me", response_model=schemas.User)
+def read_current_user(current_user: models.User = Depends(security.get_current_active_user)):
+    """Check the current user's profile and status."""
+    return current_user
+
 # --- Project & Video Endpoints ---
 @router.get("/projects", response_model=List[schemas.Project])
 def read_projects(current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):

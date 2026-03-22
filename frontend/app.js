@@ -132,10 +132,13 @@ function checkAuth() {
 
 async function fetchUserProfile() {
     try {
-        const res = await apiCall('/logs'); // Only admins can call this, good proxy for testing admin status
+        const res = await apiCall('/auth/me');
         if (res.ok) {
-            state.user.isAdmin = true;
-            els.navBtnAdmin.classList.remove('hidden');
+            const data = await res.json();
+            state.user.isAdmin = data.is_admin;
+            if (state.user.isAdmin) {
+                els.navBtnAdmin.classList.remove('hidden');
+            }
         }
     } catch (e) {}
 }

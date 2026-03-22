@@ -334,25 +334,34 @@ body {
 .badge-inactive { background: rgba(248, 81, 73, 0.2); color: var(--danger-color); }
 
 .project-form {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    border: 1px solid var(--glass-border);
 }
 
 .input-row {
     display: flex;
-    gap: 10px;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .input-row input {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.05);
+    width: 100%;
+    background: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--glass-border);
-    border-radius: 4px;
-    padding: 8px;
+    border-radius: 8px;
+    padding: 12px;
     color: #fff;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.input-row input:focus {
+    border-color: var(--primary-color);
+    background: rgba(0, 0, 0, 0.4);
+    outline: none;
 }
 
 

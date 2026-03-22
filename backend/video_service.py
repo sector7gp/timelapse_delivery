@@ -32,13 +32,21 @@ def get_video_file_path(directory_name: str, filename: str) -> str:
 def scan_project_videos(directory_name: str):
     """Scan the directory for videos and return their metadata."""
     project_path = get_project_directory(directory_name)
+    print(f"DEBUG: Scanning path: {project_path}")
     videos = []
     
-    # Just in case directory doesn't exist, return empty list instead of failing
-    if not os.path.exists(project_path) or not os.path.isdir(project_path):
+    if not os.path.exists(project_path):
+        print(f"DEBUG: Path DOES NOT EXIST: {project_path}")
         return videos
         
-    for filename in os.listdir(project_path):
+    if not os.path.isdir(project_path):
+        print(f"DEBUG: Path is NOT a directory: {project_path}")
+        return videos
+        
+    items = os.listdir(project_path)
+    print(f"DEBUG: Found {len(items)} items in directory: {items}")
+    
+    for filename in items:
         file_path = os.path.join(project_path, filename)
         if os.path.isfile(file_path):
             stat = os.stat(file_path)
@@ -47,6 +55,9 @@ def scan_project_videos(directory_name: str):
                 "size": stat.st_size,
                 "last_modified": datetime.fromtimestamp(stat.st_mtime)
             })
+            print(f"DEBUG: Added video: {filename} ({stat.st_size} bytes)")
+        else:
+            print(f"DEBUG: Skipping non-file item: {filename}")
             
     return videos
 

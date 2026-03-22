@@ -371,7 +371,7 @@ async function loadProjects() {
         state.projects = await res.json();
         renderProjects();
         if (state.projects.length > 0) {
-            selectProject(state.projects[0]);
+            setProject(state.projects[0]);
         } else {
             els.projectsList.innerHTML = '<li>No projects found</li>';
             els.videosGrid.innerHTML = '<div class="video-card"><p>No projects available.</p></div>';
@@ -381,12 +381,14 @@ async function loadProjects() {
     }
 }
 
-async function selectProject(project) {
+async function setProject(project) {
+    console.log("Setting project:", project);
     state.currentProject = project;
     els.currentProjectName.textContent = project.name;
     
     document.querySelectorAll('.project-item').forEach(el => el.classList.remove('active'));
-    document.getElementById(`project-${project.id}`).classList.add('active');
+    const el = document.getElementById(`project-${project.id}`);
+    if (el) el.classList.add('active');
     
     loadVideos(project.id);
 }
@@ -414,8 +416,10 @@ function renderProjects() {
     
     // Note: since onclick in HTML literal passes ID, we need to map id back to object
     window.selectProject = (id) => {
-        const proj = state.projects.find(p => p.id === id);
-        if(proj) selectProject(proj);
+        console.log("Global selectProject called with id:", id);
+        const proj = state.projects.find(p => p.id == id); // Use == for loose equality just in case of string/number mix
+        if(proj) setProject(proj);
+        else console.error("Project not found for id:", id);
     };
 }
 

@@ -37,6 +37,11 @@ mkdir -p /tmp/videos/sample
 python3 -m backend.main
 ```
 
+### Alternativa: PM2
+Si usas **PM2**, ya incluí un archivo `ecosystem.config.js`. Puedes iniciarlo con:
+```bash
+pm2 start ecosystem.config.js
+```
 ## Uso
 - Accede a `http://localhost:8000/` desde el navegador.
 - Credenciales por defecto (creadas por `init_db.py`):

@@ -21,7 +21,8 @@ def login_for_access_token(db: Session = Depends(database.get_db), form_data: OA
         )
     access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "is_admin": user.is_admin}, 
+        expires_delta=access_token_expires
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -135,10 +136,8 @@ def admin_delete_project(project_id: int, current_user: models.User = Depends(ge
 # --- Logs Endpoint ---
 @router.get("/logs", response_model=List[schemas.DownloadLog])
 def read_logs(skip: int = 0, limit: int = 100, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
-    """View download logs (assume all authenticated users can view, or restrict later)."""
-    # Note: In a real system, you'd likely restrict this to an admin role.
-    # We will restrict it to the admin@example.com for MVP.
-    if current_user.email != "admin@example.com":
+    """View download logs."""
+    if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to view logs")
         
     logs = crud.get_download_logs(db, skip=skip, limit=limit)

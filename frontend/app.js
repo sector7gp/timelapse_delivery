@@ -110,10 +110,14 @@ function checkAuth() {
             
             state.user = { 
                 email: payload.sub,
-                isAdmin: payload.is_admin || false // We will likely update API to include this in token or fetch user profile
+                isAdmin: payload.is_admin || false
             };
             
-            // Proactive: Fetch actual user profile to be sure about Admin status
+            if (state.user.isAdmin) {
+                els.navBtnAdmin.classList.remove('hidden');
+            }
+            
+            // Still fetch profile as a secondary verification or for other data
             fetchUserProfile();
             
             els.userEmail.textContent = state.user.email;

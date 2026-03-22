@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Unicons for Icons -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <link rel="stylesheet" href="/static/style.css?v=1.2">
+    <link rel="stylesheet" href="/static/style.css?v=1.3">
 </head>
 <body class="dark-theme">
     
@@ -119,10 +119,11 @@
                             <h3 id="management-title">User Projects</h3>
                             <div class="project-form">
                                 <div class="input-row">
-                                    <input type="text" id="new-project-name" placeholder="Project Name">
-                                    <input type="text" id="new-project-dir" placeholder="Folder Name">
+                                    <input type="text" id="new-project-name" placeholder="Friendly Name (e.g. My Project)">
+                                    <input type="text" id="new-project-dir" placeholder="Folder Name (e.g. project1)">
                                     <button class="btn btn-primary btn-small" id="btn-add-project">Add Project</button>
                                 </div>
+                                <p class="path-hint">Full Path: <code id="path-preview">/tmp/videos/...</code></p>
                             </div>
                             <ul id="user-projects-list" class="styled-list">
                                 <!-- Populated by JS -->
@@ -170,6 +171,6 @@
     <!-- Notifications Hub -->
     <div id="notification-hub" class="notification-hub"></div>
 
-    <script src="/static/app.js?v=1.2"></script>
+    <script src="/static/app.js?v=1.3"></script>
 </body>
 </html>

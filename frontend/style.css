@@ -355,6 +355,26 @@ body {
     font-size: 0.85rem;
 }
 
+.path-hint {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: #8b949e;
+}
+
+.path-hint code {
+    color: var(--primary-color);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.dir-hint {
+    display: block;
+    font-size: 0.75rem;
+    color: #8b949e;
+    margin-top: 4px;
+}
+
 /* --- Modals --- */
 .modal-overlay {
     position: fixed;

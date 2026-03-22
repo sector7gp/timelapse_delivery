@@ -1,4 +1,5 @@
 from datetime import timedelta
+import os
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
@@ -122,6 +123,17 @@ def admin_create_user_project(user_id: int, project: schemas.ProjectCreate, curr
     db_user = crud.get_user(db, user_id=user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+        
+    # Validation: Check if directory exists
+    try:
+        project_path = video_service.get_project_directory(project.directory_name)
+        if not os.path.isdir(project_path):
+            raise HTTPException(status_code=400, detail=f"Directory '{project.directory_name}' does not exist on the server")
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid directory name")
+
     return crud.create_project(db=db, project=project, user_id=user_id)
 
 @router.get("/admin/users/{user_id}/projects", response_model=List[schemas.Project])

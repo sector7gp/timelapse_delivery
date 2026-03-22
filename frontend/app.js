@@ -359,16 +359,24 @@ async function handleAddProject() {
     if (!name || !dir) { showToast('Name and directory required', 'error'); return; }
 
     try {
-        await apiCall(`/admin/users/${state.selectedAdminUser.id}/projects`, {
+        const res = await apiCall(`/admin/users/${state.selectedAdminUser.id}/projects`, {
             method: 'POST',
             body: JSON.stringify({ name, directory_name: dir })
         });
+        
+        if (!res.ok) {
+            const errData = await res.json();
+            throw new Error(errData.detail || 'Error adding project');
+        }
+
         showToast('Project added');
         document.getElementById('new-project-name').value = "";
         document.getElementById('new-project-dir').value = "";
         updatePathPreview();
         loadUserProjects(state.selectedAdminUser.id);
-    } catch (e) { showToast('Error adding project', 'error'); }
+    } catch (e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 function updatePathPreview() {

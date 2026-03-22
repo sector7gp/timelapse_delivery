@@ -135,7 +135,9 @@ async function fetchUserProfile() {
         const res = await apiCall('/auth/me');
         if (res.ok) {
             const data = await res.json();
+            state.user = data; // Store the full user object
             state.user.isAdmin = data.is_admin;
+            els.userEmail.textContent = data.full_name || data.email;
             if (state.user.isAdmin) {
                 els.navBtnAdmin.classList.remove('hidden');
             }
@@ -227,7 +229,10 @@ function renderAdminUsers() {
     els.adminUsersList.innerHTML = state.adminUsers.map(u => `
         <tr>
             <td>${u.id}</td>
-            <td>${u.email}</td>
+            <td class="user-name-cell">
+                <div class="user-name">${u.full_name || '---'}</div>
+                <div class="user-email-sub">${u.email}</div>
+            </td>
             <td><span class="badge ${u.is_admin ? 'badge-admin' : ''}">${u.is_admin ? 'YES' : 'NO'}</span></td>
             <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
             <td>
@@ -248,7 +253,7 @@ function renderAdminUsers() {
         const user = state.adminUsers.find(u => u.id === id);
         if (user) {
             state.selectedAdminUser = user;
-            els.managementTitle.textContent = `Projects for: ${user.email}`;
+            els.managementTitle.textContent = `Projects for: ${user.full_name || user.email}`;
             els.userProjectsPanel.classList.remove('hidden');
             loadUserProjects(user.id);
         }
@@ -263,12 +268,14 @@ function renderAdminUsers() {
             const user = state.adminUsers.find(u => u.id === id);
             title.textContent = "Edit User";
             editIdInput.value = user.id;
+            document.getElementById('admin-user-fullname').value = user.full_name || '';
             document.getElementById('admin-user-email').value = user.email;
             document.getElementById('admin-user-is-admin').checked = user.is_admin;
             document.getElementById('admin-user-password').placeholder = "(Leave blank to keep current)";
         } else {
             title.textContent = "Create New User";
             editIdInput.value = "";
+            document.getElementById('admin-user-fullname').value = "";
             document.getElementById('admin-user-password').placeholder = "Password";
         }
         els.modalUser.classList.remove('hidden');
@@ -287,11 +294,12 @@ function renderAdminUsers() {
 async function handleAdminUserSubmit(e) {
     e.preventDefault();
     const id = document.getElementById('edit-user-id').value;
+    const full_name = document.getElementById('admin-user-fullname').value;
     const email = document.getElementById('admin-user-email').value;
     const password = document.getElementById('admin-user-password').value;
     const is_admin = document.getElementById('admin-user-is-admin').checked;
 
-    const data = { email, is_admin };
+    const data = { email, full_name, is_admin };
     if (password) data.password = password;
 
     try {

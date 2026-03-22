@@ -12,15 +12,21 @@ def init_db():
         # Check if is_admin exists in users table
         print("Checking for 'is_admin' column...")
         try:
+            # Check is_admin
             result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'is_admin'")).fetchone()
             if not result:
                 print("Adding missing 'is_admin' column to 'users' table...")
                 conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
-                conn.commit()
-                print("Column 'is_admin' added successfully.")
+            
+            # Check full_name
+            result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'full_name'")).fetchone()
+            if not result:
+                print("Adding missing 'full_name' column to 'users' table...")
+                conn.execute(text("ALTER TABLE users ADD COLUMN full_name VARCHAR(255)"))
+            
+            conn.commit()
         except Exception as e:
-            # Table might not exist yet, which is fine, create_all will handle it
-            print(f"Note: Migration check skipped or failed (table might not exist yet).")
+            print(f"Note: Migration check skipped or failed: {e}")
 
     print("Creating/Updating database tables...")
     Base.metadata.create_all(bind=engine)
@@ -33,7 +39,8 @@ def init_db():
         if not admin:
             print("Creating default admin user...")
             hashed_pw = get_password_hash("admin123")
-            admin = User(email="admin@example.com", hashed_password=hashed_pw, is_active=True, is_admin=True)
+            admin_name = os.environ.get("DEFAULT_ADMIN_NAME", "Administrator")
+            admin = User(email="admin@example.com", full_name=admin_name, hashed_password=hashed_pw, is_active=True, is_admin=True)
             db.add(admin)
             db.commit()
             db.refresh(admin)
@@ -42,6 +49,8 @@ def init_db():
             print("Admin user already exists. Ensuring admin privileges...")
             admin.is_admin = True
             admin.is_active = True
+            if not admin.full_name:
+                admin.full_name = os.environ.get("DEFAULT_ADMIN_NAME", "Administrator")
             db.commit()
 
         # Create a sample project if none exists for admin

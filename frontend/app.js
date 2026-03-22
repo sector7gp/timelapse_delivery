@@ -112,10 +112,8 @@ function checkAuth() {
                 email: payload.sub,
                 isAdmin: payload.is_admin || false
             };
-            console.log("Logged in user:", state.user);
             
             if (state.user.isAdmin) {
-                console.log("User is admin via token, showing button...");
                 els.navBtnAdmin.classList.remove('hidden');
             }
             
@@ -137,14 +135,10 @@ async function fetchUserProfile() {
         const res = await apiCall('/auth/me');
         if (res.ok) {
             const data = await res.json();
-            console.log("Profile data:", data);
             state.user.isAdmin = data.is_admin;
             if (state.user.isAdmin) {
-                console.log("User is admin via profile, showing button...");
                 els.navBtnAdmin.classList.remove('hidden');
             }
-        } else {
-            console.warn("Failed to fetch profile:", res.status);
         }
     } catch (e) {}
 }

@@ -5,9 +5,26 @@ from backend.models import User, Project
 from backend.crud import get_password_hash
 
 def init_db():
-    print("Creating database tables...")
+    print("Verifying database schema...")
+    # Basic migration check for is_admin column
+    from sqlalchemy import text
+    with engine.connect() as conn:
+        # Check if is_admin exists in users table
+        print("Checking for 'is_admin' column...")
+        try:
+            result = conn.execute(text("SHOW COLUMNS FROM users LIKE 'is_admin'")).fetchone()
+            if not result:
+                print("Adding missing 'is_admin' column to 'users' table...")
+                conn.execute(text("ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+                print("Column 'is_admin' added successfully.")
+        except Exception as e:
+            # Table might not exist yet, which is fine, create_all will handle it
+            print(f"Note: Migration check skipped or failed (table might not exist yet).")
+
+    print("Creating/Updating database tables...")
     Base.metadata.create_all(bind=engine)
-    print("Tables created successfully.")
+    print("Tables created/updated successfully.")
     
     db = SessionLocal()
     try:

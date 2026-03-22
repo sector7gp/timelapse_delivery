@@ -35,7 +35,6 @@ const els = {
     managementTitle: document.getElementById('management-title'),
     modalUser: document.getElementById('modal-user'),
     userAdminForm: document.getElementById('user-admin-form'),
-    pathPreview: document.getElementById('path-preview'),
     notificationHub: document.getElementById('notification-hub')
 };
 
@@ -56,7 +55,6 @@ function setupEventListeners() {
     document.getElementById('btn-close-modal').addEventListener('click', () => els.modalUser.classList.add('hidden'));
     els.userAdminForm.addEventListener('submit', handleAdminUserSubmit);
     document.getElementById('btn-add-project').addEventListener('click', handleAddProject);
-    document.getElementById('new-project-dir').addEventListener('input', updatePathPreview);
 }
 
 // UI Helpers
@@ -331,7 +329,7 @@ function renderUserProjects(userId, projects) {
         <li class="project-item">
             <div class="project-info">
                 <strong>${p.name}</strong>
-                <span class="dir-hint">/tmp/videos/${p.directory_name}</span>
+                <span class="dir-hint">Folder: ${p.directory_name}</span>
             </div>
             <button class="btn btn-small btn-delete" onclick="deleteProject(${p.id})">
                 <i class="uil uil-trash-alt"></i>
@@ -372,18 +370,10 @@ async function handleAddProject() {
         showToast('Project added');
         document.getElementById('new-project-name').value = "";
         document.getElementById('new-project-dir').value = "";
-        updatePathPreview();
         loadUserProjects(state.selectedAdminUser.id);
     } catch (e) { 
         showToast(e.message, 'error'); 
     }
-}
-
-function updatePathPreview() {
-    let dir = document.getElementById('new-project-dir').value.trim();
-    dir = dir.replace(/^\/+|\/+$/g, '');
-    const base = "/tmp/videos"; // This could be fetched from server eventually
-    els.pathPreview.textContent = `${base}/${dir || '...'}`;
 }
 
 // Data Loading (Standard View)

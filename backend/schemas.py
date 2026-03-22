@@ -16,10 +16,18 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    is_admin: bool = False
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
 
 class User(UserBase):
     id: int
     is_active: bool
+    is_admin: bool
 
     model_config = {"from_attributes": True}
 

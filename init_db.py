@@ -16,7 +16,7 @@ def init_db():
         if not admin:
             print("Creating default admin user...")
             hashed_pw = get_password_hash("admin123")
-            admin = User(email="admin@example.com", hashed_password=hashed_pw, is_active=True)
+            admin = User(email="admin@example.com", hashed_password=hashed_pw, is_active=True, is_admin=True)
             db.add(admin)
             db.commit()
             db.refresh(admin)

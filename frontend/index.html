@@ -49,6 +49,12 @@
                     <span>Video Portal</span>
                 </div>
                 <div class="nav-actions">
+                    <button id="nav-btn-admin" class="btn btn-outline btn-nav hidden">
+                        <i class="uil uil-setting"></i> Admin
+                    </button>
+                    <button id="nav-btn-dashboard" class="btn btn-outline btn-nav active">
+                        <i class="uil uil-dashboard"></i> Dashboard
+                    </button>
                     <span id="user-email">user@example.com</span>
                     <button id="btn-logout" class="btn btn-outline">
                         <i class="uil uil-sign-out-alt"></i> Logout
@@ -58,24 +64,100 @@
 
             <!-- Main Content -->
             <main class="main-content">
-                <!-- Projects Sidebar -->
-                <aside class="sidebar glass-panel">
-                    <h3>Your Projects</h3>
-                    <ul id="projects-list" class="styled-list">
-                        <!-- Populated by JS -->
-                    </ul>
-                </aside>
+                <!-- Dashboard View (Projects + Videos) -->
+                <div id="subview-dashboard" class="subview flex">
+                    <!-- Projects Sidebar -->
+                    <aside class="sidebar glass-panel">
+                        <h3>Your Projects</h3>
+                        <ul id="projects-list" class="styled-list">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </aside>
 
-                <!-- Video List Area -->
-                <section class="content-area glass-panel">
-                    <div class="content-header">
-                        <h2 id="current-project-name">Select a Project</h2>
-                    </div>
-                    <div class="video-grid" id="videos-grid">
-                        <!-- Populated by JS -->
-                    </div>
-                </section>
+                    <!-- Video List Area -->
+                    <section class="content-area glass-panel">
+                        <div class="content-header">
+                            <h2 id="current-project-name">Select a Project</h2>
+                        </div>
+                        <div class="video-grid" id="videos-grid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Admin View -->
+                <div id="subview-admin" class="subview hidden full-width">
+                    <section class="admin-panels">
+                        <!-- User Management Panel -->
+                        <div class="admin-card glass-panel">
+                            <h3><i class="uil uil-users-alt"></i> User Management</h3>
+                            <div class="admin-actions">
+                                <button class="btn btn-primary btn-small" id="btn-show-create-user">
+                                    <i class="uil uil-plus"></i> New User
+                                </button>
+                            </div>
+                            <div class="admin-table-container">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Email</th>
+                                            <th>Admin</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-users-list">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- User Projects Management (Contextual) -->
+                        <div id="user-projects-panel" class="admin-card glass-panel hidden">
+                            <h3 id="management-title">User Projects</h3>
+                            <div class="project-form">
+                                <div class="input-row">
+                                    <input type="text" id="new-project-name" placeholder="Project Name">
+                                    <input type="text" id="new-project-dir" placeholder="Folder Name">
+                                    <button class="btn btn-primary btn-small" id="btn-add-project">Add Project</button>
+                                </div>
+                            </div>
+                            <ul id="user-projects-list" class="styled-list">
+                                <!-- Populated by JS -->
+                            </ul>
+                        </div>
+                    </section>
+                </div>
             </main>
+        </div>
+
+        <!-- User Create Modal -->
+        <div id="modal-user" class="modal-overlay hidden">
+            <div class="modal-content glass-panel">
+                <h3 id="user-modal-title">Create New User</h3>
+                <form id="user-admin-form">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="input-group">
+                        <i class="uil uil-envelope"></i>
+                        <input type="email" id="admin-user-email" placeholder="Email" required>
+                    </div>
+                    <div class="input-group">
+                        <i class="uil uil-lock-alt"></i>
+                        <input type="password" id="admin-user-password" placeholder="Password">
+                    </div>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="admin-user-is-admin"> Administrative Privileges?
+                        </label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="btn-close-modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save User</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <!-- Background Animation Elements -->

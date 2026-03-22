@@ -4,16 +4,22 @@ const API_URL = '/api';
 // State
 let state = {
     token: localStorage.getItem('token') || null,
-    user: null, // we can optionally decode the token
+    user: null, 
     projects: [],
     currentProject: null,
-    videos: []
+    videos: [],
+    adminUsers: [], // Admin only
+    selectedAdminUser: null // Admin only
 };
 
 // UI Elements
 const els = {
     loginView: document.getElementById('login-view'),
     dashboardView: document.getElementById('dashboard-view'),
+    subviewDashboard: document.getElementById('subview-dashboard'),
+    subviewAdmin: document.getElementById('subview-admin'),
+    navBtnAdmin: document.getElementById('nav-btn-admin'),
+    navBtnDashboard: document.getElementById('nav-btn-dashboard'),
     loginForm: document.getElementById('login-form'),
     loginError: document.getElementById('login-error'),
     emailInput: document.getElementById('email'),
@@ -23,6 +29,12 @@ const els = {
     projectsList: document.getElementById('projects-list'),
     videosGrid: document.getElementById('videos-grid'),
     currentProjectName: document.getElementById('current-project-name'),
+    adminUsersList: document.getElementById('admin-users-list'),
+    userProjectsPanel: document.getElementById('user-projects-panel'),
+    userProjectsList: document.getElementById('user-projects-list'),
+    managementTitle: document.getElementById('management-title'),
+    modalUser: document.getElementById('modal-user'),
+    userAdminForm: document.getElementById('user-admin-form'),
     notificationHub: document.getElementById('notification-hub')
 };
 
@@ -35,6 +47,14 @@ function init() {
 function setupEventListeners() {
     els.loginForm.addEventListener('submit', handleLogin);
     els.btnLogout.addEventListener('click', handleLogout);
+    
+    els.navBtnDashboard.addEventListener('click', () => switchSubview('dashboard'));
+    els.navBtnAdmin.addEventListener('click', () => switchSubview('admin'));
+    
+    document.getElementById('btn-show-create-user').addEventListener('click', () => showUserModal());
+    document.getElementById('btn-close-modal').addEventListener('click', () => els.modalUser.classList.add('hidden'));
+    els.userAdminForm.addEventListener('submit', handleAdminUserSubmit);
+    document.getElementById('btn-add-project').addEventListener('click', handleAddProject);
 }
 
 // UI Helpers
@@ -57,22 +77,45 @@ function switchView(viewName) {
     if (viewName === 'dashboard') {
         els.loginView.classList.add('hidden');
         els.dashboardView.classList.remove('hidden');
-        loadProjects();
+        switchSubview('dashboard');
     } else {
         els.dashboardView.classList.add('hidden');
         els.loginView.classList.remove('hidden');
     }
 }
 
+function switchSubview(subview) {
+    if (subview === 'dashboard') {
+        els.subviewAdmin.classList.add('hidden');
+        els.subviewDashboard.classList.remove('hidden');
+        els.navBtnAdmin.classList.remove('active');
+        els.navBtnDashboard.classList.add('active');
+        loadProjects();
+    } else {
+        els.subviewDashboard.classList.add('hidden');
+        els.subviewAdmin.classList.remove('hidden');
+        els.navBtnDashboard.classList.remove('active');
+        els.navBtnAdmin.classList.add('active');
+        loadAdminUsers();
+    }
+}
+
 // Authentication
 function checkAuth() {
     if (state.token) {
-        // Assume valid for MVP, decode email from JWT
         try {
             const base64Url = state.token.split('.')[1];
             const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
             const payload = JSON.parse(atob(base64));
-            state.user = { email: payload.sub };
+            
+            state.user = { 
+                email: payload.sub,
+                isAdmin: payload.is_admin || false // We will likely update API to include this in token or fetch user profile
+            };
+            
+            // Proactive: Fetch actual user profile to be sure about Admin status
+            fetchUserProfile();
+            
             els.userEmail.textContent = state.user.email;
             switchView('dashboard');
         } catch (e) {
@@ -83,6 +126,16 @@ function checkAuth() {
     }
 }
 
+async function fetchUserProfile() {
+    try {
+        const res = await apiCall('/logs'); // Only admins can call this, good proxy for testing admin status
+        if (res.ok) {
+            state.user.isAdmin = true;
+            els.navBtnAdmin.classList.remove('hidden');
+        }
+    } catch (e) {}
+}
+
 async function handleLogin(e) {
     e.preventDefault();
     els.loginError.classList.add('hidden');
@@ -90,7 +143,7 @@ async function handleLogin(e) {
     const password = els.passwordInput.value;
 
     const formData = new FormData();
-    formData.append('username', email); // OAuth2 expects username
+    formData.append('username', email); 
     formData.append('password', password);
 
     try {
@@ -125,20 +178,26 @@ function handleLogout() {
     state.user = null;
     localStorage.removeItem('token');
     els.loginForm.reset();
+    els.navBtnAdmin.classList.add('hidden');
     switchView('login');
-    showToast('Logged out successfully', 'success');
 }
 
 // API Calls
 async function apiCall(endpoint, options = {}) {
     const headers = {
         'Authorization': `Bearer ${state.token}`,
+        'Content-Type': 'application/json',
         ...options.headers
     };
     
+    // Don't send JSON content-type for FormData (like login)
+    if (options.body instanceof FormData) {
+        delete headers['Content-Type'];
+    }
+    
     const response = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
     
-    if (response.status === 401) {
+    if (response.status === 401 && !endpoint.includes('/auth/login')) {
         handleLogout();
         throw new Error('Session expired');
     }
@@ -146,7 +205,159 @@ async function apiCall(endpoint, options = {}) {
     return response;
 }
 
-// Data Loading
+// Admin Logic
+async function loadAdminUsers() {
+    try {
+        const res = await apiCall('/admin/users');
+        state.adminUsers = await res.json();
+        renderAdminUsers();
+    } catch (error) {
+        showToast('Error loading users', 'error');
+    }
+}
+
+function renderAdminUsers() {
+    els.adminUsersList.innerHTML = state.adminUsers.map(u => `
+        <tr>
+            <td>${u.id}</td>
+            <td>${u.email}</td>
+            <td><span class="badge ${u.is_admin ? 'badge-admin' : ''}">${u.is_admin ? 'YES' : 'NO'}</span></td>
+            <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td>
+                <button class="btn btn-small btn-outline" onclick="manageUserProjects(${u.id})" title="Manage Projects">
+                    <i class="uil uil-folder-open"></i>
+                </button>
+                <button class="btn btn-small btn-outline" onclick="showUserModal(${u.id})" title="Edit User">
+                    <i class="uil uil-edit"></i>
+                </button>
+                <button class="btn btn-small btn-delete" onclick="deleteUser(${u.id})" title="Delete User">
+                    <i class="uil uil-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+    
+    window.manageUserProjects = (id) => {
+        const user = state.adminUsers.find(u => u.id === id);
+        if (user) {
+            state.selectedAdminUser = user;
+            els.managementTitle.textContent = `Projects for: ${user.email}`;
+            els.userProjectsPanel.classList.remove('hidden');
+            loadUserProjects(user.id);
+        }
+    };
+
+    window.showUserModal = (id = null) => {
+        els.userAdminForm.reset();
+        const title = document.getElementById('user-modal-title');
+        const editIdInput = document.getElementById('edit-user-id');
+        
+        if (id) {
+            const user = state.adminUsers.find(u => u.id === id);
+            title.textContent = "Edit User";
+            editIdInput.value = user.id;
+            document.getElementById('admin-user-email').value = user.email;
+            document.getElementById('admin-user-is-admin').checked = user.is_admin;
+            document.getElementById('admin-user-password').placeholder = "(Leave blank to keep current)";
+        } else {
+            title.textContent = "Create New User";
+            editIdInput.value = "";
+            document.getElementById('admin-user-password').placeholder = "Password";
+        }
+        els.modalUser.classList.remove('hidden');
+    };
+
+    window.deleteUser = async (id) => {
+        if (!confirm("Are you sure? This will delete the user and all their projects.")) return;
+        try {
+            await apiCall(`/admin/users/${id}`, { method: 'DELETE' });
+            showToast('User deleted');
+            loadAdminUsers();
+        } catch (e) { showToast('Error deleting user', 'error'); }
+    };
+}
+
+async function handleAdminUserSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-user-id').value;
+    const email = document.getElementById('admin-user-email').value;
+    const password = document.getElementById('admin-user-password').value;
+    const is_admin = document.getElementById('admin-user-is-admin').checked;
+
+    const data = { email, is_admin };
+    if (password) data.password = password;
+
+    try {
+        if (id) {
+            await apiCall(`/admin/users/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(data)
+            });
+            showToast('User updated');
+        } else {
+            if (!password) { showToast('Password required for new user', 'error'); return; }
+            await apiCall(`/admin/users`, {
+                method: 'POST',
+                body: JSON.stringify(data)
+            });
+            showToast('User created');
+        }
+        els.modalUser.classList.add('hidden');
+        loadAdminUsers();
+    } catch (e) { showToast('Error saving user', 'error'); }
+}
+
+async function loadUserProjects(userId) {
+    try {
+        const res = await apiCall(`/admin/users/${userId}/projects`);
+        const projects = await res.json();
+        renderUserProjects(userId, projects);
+    } catch (e) {
+        showToast('Error loading user projects', 'error');
+    }
+}
+
+function renderUserProjects(userId, projects) {
+    els.userProjectsList.innerHTML = projects.map(p => `
+        <li class="project-item">
+            <div class="project-info">
+                <strong>${p.name}</strong>
+                <span class="dir-hint">/videos/${p.directory_name}</span>
+            </div>
+            <button class="btn btn-small btn-delete" onclick="deleteProject(${p.id})">
+                <i class="uil uil-trash-alt"></i>
+            </button>
+        </li>
+    `).join('') || '<li class="empty-msg">No projects assigned</li>';
+
+    window.deleteProject = async (projectId) => {
+        if (!confirm("Are you sure you want to delete this project?")) return;
+        try {
+            await apiCall(`/admin/projects/${projectId}`, { method: 'DELETE' });
+            showToast('Project deleted');
+            loadUserProjects(userId);
+        } catch (e) { showToast('Error deleting project', 'error'); }
+    };
+}
+
+async function handleAddProject() {
+    const name = document.getElementById('new-project-name').value;
+    const dir = document.getElementById('new-project-dir').value;
+    if (!name || !dir) { showToast('Name and directory required', 'error'); return; }
+
+    try {
+        await apiCall(`/admin/users/${state.selectedAdminUser.id}/projects`, {
+            method: 'POST',
+            body: JSON.stringify({ name, directory_name: dir })
+        });
+        showToast('Project added');
+        document.getElementById('new-project-name').value = "";
+        document.getElementById('new-project-dir').value = "";
+        loadUserProjects(state.selectedAdminUser.id);
+    } catch (e) { showToast('Error adding project', 'error'); }
+}
+
+// Data Loading (Standard View)
 async function loadProjects() {
     try {
         const res = await apiCall('/projects');

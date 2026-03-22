@@ -79,6 +79,59 @@ def delete_video(project_id: int, filename: str, current_user: models.User = Dep
         
     return {"message": "Video successfully deleted"}
 
+# --- Dependency for Admin check ---
+def get_current_admin_user(current_user: models.User = Depends(security.get_current_active_user)):
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Not authorized to perform administrative actions")
+    return current_user
+
+# --- Admin Endpoints ---
+@router.get("/admin/users", response_model=List[schemas.User])
+def admin_read_users(skip: int = 0, limit: int = 100, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    return crud.get_all_users(db, skip=skip, limit=limit)
+
+@router.post("/admin/users", response_model=schemas.User)
+def admin_create_user(user: schemas.UserCreate, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return crud.create_user(db=db, user=user)
+
+@router.patch("/admin/users/{user_id}", response_model=schemas.User)
+def admin_update_user(user_id: int, user_update: schemas.UserUpdate, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    db_user = crud.update_user(db=db, user_id=user_id, user_update=user_update)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
+
+@router.delete("/admin/users/{user_id}")
+def admin_delete_user(user_id: int, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    success = crud.delete_user(db=db, user_id=user_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User deleted successfully"}
+
+@router.post("/admin/users/{user_id}/projects", response_model=schemas.Project)
+def admin_create_user_project(user_id: int, project: schemas.ProjectCreate, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return crud.create_project(db=db, project=project, user_id=user_id)
+
+@router.get("/admin/users/{user_id}/projects", response_model=List[schemas.Project])
+def admin_read_user_projects(user_id: int, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user.projects
+
+@router.delete("/admin/projects/{project_id}")
+def admin_delete_project(project_id: int, current_user: models.User = Depends(get_current_admin_user), db: Session = Depends(database.get_db)):
+    success = crud.delete_project(db=db, project_id=project_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return {"message": "Project deleted successfully"}
+
 # --- Logs Endpoint ---
 @router.get("/logs", response_model=List[schemas.DownloadLog])
 def read_logs(skip: int = 0, limit: int = 100, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):

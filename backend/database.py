@@ -7,12 +7,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "mysql+pymysql://root:password@localhost:3306/video_portal")
+DB_SSL_DISABLED = os.environ.get("DB_SSL_DISABLED", "0") == "1"
 
-# Check if we are running in a CI or test environment and want to use SQLite just in case
+# SQLAlchemy engine setup
+connect_args = {}
+
 if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
+    connect_args["check_same_thread"] = False
+elif DB_SSL_DISABLED:
+    # Disable SSL for MySQL/MariaDB (equivalent to --ssl=0)
+    connect_args["ssl_disabled"] = True
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

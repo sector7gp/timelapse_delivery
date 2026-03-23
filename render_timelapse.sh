@@ -10,9 +10,9 @@ if [ -f .env ]; then
 fi
 
 # Configuration from .env
-IMAGES_DIR=${TIMELAPSE_IMAGES_DIR:-"/home/sector7gp/tony_timelapse/images"}
-VIDEOS_DIR=${TIMELAPSE_VIDEOS_DIR:-"/home/sector7gp/tony_timelapse/videos"}
-REMOTE_DEST=${REMOTE_SYNC_DEST:-"sector7gp@192.168.1.100:/tmp/videos/Riva"}
+IMAGES_DIR=${TIMELAPSE_IMAGES_DIR:-"./images"}
+VIDEOS_DIR=${TIMELAPSE_VIDEOS_DIR:-"./videos"}
+REMOTE_DEST=${REMOTE_SYNC_DEST:-"user@192.168.1.1:/tmp/videos/proyecto1"}
 
 # Ensure videos directory exists
 mkdir -p "$VIDEOS_DIR"
@@ -53,19 +53,19 @@ for dir in "$IMAGES_DIR"/*/; do
 
     if [ $? -eq 0 ]; then
         echo "Successfully generated: $video_output"
-        
-        # Rsync to remote location
-        echo "Syncing $video_output to remote destination..."
-        rsync -avz "$video_output" "$REMOTE_DEST/"
-        
-        if [ $? -eq 0 ]; then
-            echo "Remote sync complete for $folder_name"
-        else
-            echo "Error syncing $folder_name to remote destination"
-        fi
     else
         echo "Error generating video for $folder_name"
     fi
 done
+
+# Sync all videos to remote location at the end
+echo "Starting final sync to remote destination: $REMOTE_DEST"
+rsync -avz "$VIDEOS_DIR/" "$REMOTE_DEST/"
+
+if [ $? -eq 0 ]; then
+    echo "Remote sync complete for all files."
+else
+    echo "Error during final remote sync."
+fi
 
 echo "Timelapse rendering process finished."

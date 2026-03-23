@@ -73,6 +73,23 @@ def download_video(project_id: int, filename: str, request: Request, current_use
     
     return FileResponse(path=file_path, filename=filename, media_type='application/octet-stream')
 
+@router.get("/projects/{project_id}/videos/{filename}/stream")
+def stream_video(project_id: int, filename: str, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
+    """Stream a video for in-browser playback."""
+    project = crud.get_project_by_id(db, project_id=project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Project not found or access denied")
+        
+    try:
+        file_path = video_service.get_video_file_path(project.directory_name, filename)
+    except HTTPException as e:
+        raise e
+        
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Video file not found")
+        
+    return FileResponse(path=file_path, media_type='video/mp4')
+
 @router.delete("/projects/{project_id}/videos/{filename}")
 def delete_video(project_id: int, filename: str, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
     """Delete a video securely."""

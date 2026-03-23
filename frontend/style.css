@@ -436,6 +436,57 @@ body {
 
 .modal-footer .btn { width: auto; }
 
+/* Video Player Specific */
+.video-player-container {
+    max-width: 900px !important;
+    width: 90% !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.btn-close-circle {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.btn-close-circle:hover {
+    background: var(--danger-color);
+}
+
+#video-player {
+    width: 100%;
+    max-height: 70vh;
+    background: #000;
+    display: block;
+}
+
+.video-icon-clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.video-icon-clickable:hover {
+    transform: scale(1.1);
+    color: #fff;
+}
+
 .sidebar h3 {
     font-size: 0.9rem;
     text-transform: uppercase;

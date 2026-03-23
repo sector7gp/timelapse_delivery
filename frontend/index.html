@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Unicons for Icons -->
     <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
-    <link rel="stylesheet" href="/static/style.css?v=2.0">
+    <link rel="stylesheet" href="/static/style.css?v=2.2">
 </head>
 <body class="dark-theme">
     
@@ -166,6 +166,19 @@
             </div>
         </div>
 
+        <!-- Video Playback Modal -->
+        <div id="modal-video" class="modal-overlay hidden">
+            <div class="modal-content glass-panel video-player-container">
+                <div class="modal-header">
+                    <h3 id="video-modal-title">Video Preview</h3>
+                    <button class="btn-close-circle" id="btn-close-video">
+                        <i class="uil uil-multiply"></i>
+                    </button>
+                </div>
+                <video id="video-player" controls controlsList="nodownload"></video>
+            </div>
+        </div>
+
         <!-- Background Animation Elements -->
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -176,6 +189,6 @@
     <!-- Notifications Hub -->
     <div id="notification-hub" class="notification-hub"></div>
 
-    <script src="/static/app.js?v=2.0"></script>
+    <script src="/static/app.js?v=2.2"></script>
 </body>
 </html>

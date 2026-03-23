@@ -53,6 +53,14 @@ function setupEventListeners() {
     
     document.getElementById('btn-show-create-user').addEventListener('click', () => showUserModal());
     document.getElementById('btn-close-modal').addEventListener('click', () => els.modalUser.classList.add('hidden'));
+    document.getElementById('btn-close-video').addEventListener('click', () => {
+        const modalVideo = document.getElementById('modal-video');
+        const videoPlayer = document.getElementById('video-player');
+        videoPlayer.pause();
+        videoPlayer.src = "";
+        modalVideo.classList.add('hidden');
+    });
+    
     els.userAdminForm.addEventListener('submit', handleAdminUserSubmit);
     document.getElementById('btn-add-project').addEventListener('click', handleAddProject);
 }
@@ -431,6 +439,19 @@ async function loadVideos(projectId) {
     }
 }
 
+}
+
+window.playVideo = (projectId, filename) => {
+    const videoPlayer = document.getElementById('video-player');
+    const modalVideo = document.getElementById('modal-video');
+    const title = document.getElementById('video-modal-title');
+    
+    title.textContent = filename;
+    videoPlayer.src = `${API_URL}/projects/${projectId}/videos/${encodeURIComponent(filename)}/stream`;
+    modalVideo.classList.remove('hidden');
+    videoPlayer.play();
+};
+
 // Rendering
 function renderProjects() {
     els.projectsList.innerHTML = state.projects.map(p => `
@@ -450,6 +471,9 @@ function renderProjects() {
 }
 
 function renderVideos() {
+    if (!state.currentProject) return;
+    const projectId = state.currentProject.id;
+
     if (state.videos.length === 0) {
         els.videosGrid.innerHTML = `
             <div style="grid-column: 1/-1; text-align: center; color: #8b949e; padding: 40px;">
@@ -466,7 +490,10 @@ function renderVideos() {
         
         return `
             <div class="video-card">
-                <div class="video-icon"><i class="uil uil-video"></i></div>
+                <div class="video-icon video-icon-clickable" onclick="playVideo(${projectId}, '${v.filename}')" title="Play Video">
+                    <i class="uil uil-play-circle"></i>
+                    <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">Click to Play</div>
+                </div>
                 <div class="video-info">
                     <h4>${v.filename}</h4>
                     <div class="video-meta">
@@ -475,22 +502,21 @@ function renderVideos() {
                     </div>
                 </div>
                 <div class="video-actions">
-                    <button class="btn btn-small btn-download" onclick="downloadVideo('${v.filename}')">
+                    <button class="btn btn-small btn-download" onclick="downloadVideo('${v.filename}')" title="Download">
                         <i class="uil uil-download-alt"></i> Download
                     </button>
-                    <button class="btn btn-small btn-delete" onclick="deleteVideo('${v.filename}')">
-                        <i class="uil uil-trash-alt"></i> Delete
+                    <button class="btn btn-small btn-delete" onclick="deleteVideo('${v.filename}')" title="Delete">
+                        <i class="uil uil-trash-alt"></i>
                     </button>
                 </div>
             </div>
         `;
     }).join('');
-    
+
+    // Internal helpers attached to window for HTML access
     window.downloadVideo = async (filename) => {
         try {
-            const url = `${API_URL}/projects/${state.currentProject.id}/videos/${encodeURIComponent(filename)}/download`;
-            // Using fetch to pass Auth header, then create a blob link
-            const res = await apiCall(`/projects/${state.currentProject.id}/videos/${encodeURIComponent(filename)}/download`);
+            const res = await apiCall(`/projects/${projectId}/videos/${encodeURIComponent(filename)}/download`);
             if(!res.ok) throw new Error("Failed to download");
             
             const blob = await res.blob();
@@ -503,7 +529,7 @@ function renderVideos() {
             a.click();
             window.URL.revokeObjectURL(downloadUrl);
             a.remove();
-            showToast('Download started', 'success');
+            showToast('Download started');
         } catch (error) {
             showToast('Error downloading file', 'error');
         }
@@ -511,14 +537,13 @@ function renderVideos() {
 
     window.deleteVideo = async (filename) => {
         if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
-        
         try {
-            const res = await apiCall(`/projects/${state.currentProject.id}/videos/${encodeURIComponent(filename)}`, {
+            const res = await apiCall(`/projects/${projectId}/videos/${encodeURIComponent(filename)}`, {
                 method: 'DELETE'
             });
             if(!res.ok) throw new Error("Failed to delete");
-            showToast('Video deleted', 'success');
-            loadVideos(state.currentProject.id); // reload
+            showToast('Video deleted');
+            loadVideos(projectId);
         } catch (error) {
             showToast('Error deleting file', 'error');
         }

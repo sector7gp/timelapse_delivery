@@ -228,68 +228,74 @@ async function loadAdminUsers() {
 function renderAdminUsers() {
     els.adminUsersList.innerHTML = state.adminUsers.map(u => `
         <tr>
-            <td>${u.id}</td>
-            <td class="user-name-cell">
-                <div class="user-name">${u.full_name || '---'}</div>
-                <div class="user-email-sub">${u.email}</div>
+            <td data-label="ID">${u.id}</td>
+            <td data-label="Email">
+                <div class="user-name-cell">
+                    <div class="user-name">${u.full_name || '---'}</div>
+                    <div class="user-email-sub">${u.email}</div>
+                </div>
             </td>
-            <td><span class="badge ${u.is_admin ? 'badge-admin' : ''}">${u.is_admin ? 'YES' : 'NO'}</span></td>
-            <td><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
-            <td>
-                <button class="btn btn-small btn-outline" onclick="manageUserProjects(${u.id})" title="Manage Projects">
-                    <i class="uil uil-folder-open"></i>
-                </button>
-                <button class="btn btn-small btn-outline" onclick="showUserModal(${u.id})" title="Edit User">
-                    <i class="uil uil-edit"></i>
-                </button>
-                <button class="btn btn-small btn-delete" onclick="deleteUser(${u.id})" title="Delete User">
-                    <i class="uil uil-trash-alt"></i>
-                </button>
+            <td data-label="Admin"><span class="badge ${u.is_admin ? 'badge-admin' : ''}">${u.is_admin ? 'YES' : 'NO'}</span></td>
+            <td data-label="Status"><span class="badge ${u.is_active ? 'badge-active' : 'badge-inactive'}">${u.is_active ? 'Active' : 'Inactive'}</span></td>
+            <td data-label="Actions">
+                <div class="admin-actions-cell" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-small btn-outline" onclick="manageUserProjects(${u.id})" title="Manage Projects">
+                        <i class="uil uil-folder-open"></i>
+                    </button>
+                    <button class="btn btn-small btn-outline" onclick="showUserModal(${u.id})" title="Edit User">
+                        <i class="uil uil-edit"></i>
+                    </button>
+                    ${!u.is_admin ? `
+                    <button class="btn btn-small btn-delete" onclick="deleteUser(${u.id})" title="Delete User">
+                        <i class="uil uil-trash-alt"></i>
+                    </button>` : ''}
+                </div>
             </td>
         </tr>
-    `).join('');
-    
-    window.manageUserProjects = (id) => {
-        const user = state.adminUsers.find(u => u.id === id);
-        if (user) {
-            state.selectedAdminUser = user;
-            els.managementTitle.textContent = `Projects for: ${user.full_name || user.email}`;
-            els.userProjectsPanel.classList.remove('hidden');
-            loadUserProjects(user.id);
-        }
-    };
-
-    window.showUserModal = (id = null) => {
-        els.userAdminForm.reset();
-        const title = document.getElementById('user-modal-title');
-        const editIdInput = document.getElementById('edit-user-id');
-        
-        if (id) {
-            const user = state.adminUsers.find(u => u.id === id);
-            title.textContent = "Edit User";
-            editIdInput.value = user.id;
-            document.getElementById('admin-user-fullname').value = user.full_name || '';
-            document.getElementById('admin-user-email').value = user.email;
-            document.getElementById('admin-user-is-admin').checked = user.is_admin;
-            document.getElementById('admin-user-password').placeholder = "(Leave blank to keep current)";
-        } else {
-            title.textContent = "Create New User";
-            editIdInput.value = "";
-            document.getElementById('admin-user-fullname').value = "";
-            document.getElementById('admin-user-password').placeholder = "Password";
-        }
-        els.modalUser.classList.remove('hidden');
-    };
-
-    window.deleteUser = async (id) => {
-        if (!confirm("Are you sure? This will delete the user and all their projects.")) return;
-        try {
-            await apiCall(`/admin/users/${id}`, { method: 'DELETE' });
-            showToast('User deleted');
-            loadAdminUsers();
-        } catch (e) { showToast('Error deleting user', 'error'); }
-    };
+    `).join('') || '<tr><td colspan="5" style="text-align:center; padding: 20px;">No users found</td></tr>';
 }
+
+// Global helpers for admin actions
+window.manageUserProjects = (id) => {
+    const user = state.adminUsers.find(u => u.id === id);
+    if (user) {
+        state.selectedAdminUser = user;
+        els.managementTitle.textContent = `Projects for: ${user.full_name || user.email}`;
+        els.userProjectsPanel.classList.remove('hidden');
+        loadUserProjects(user.id);
+    }
+};
+
+window.showUserModal = (id = null) => {
+    els.userAdminForm.reset();
+    const title = document.getElementById('user-modal-title');
+    const editIdInput = document.getElementById('edit-user-id');
+    
+    if (id) {
+        const user = state.adminUsers.find(u => u.id === id);
+        title.textContent = "Edit User";
+        editIdInput.value = user.id;
+        document.getElementById('admin-user-fullname').value = user.full_name || '';
+        document.getElementById('admin-user-email').value = user.email;
+        document.getElementById('admin-user-is-admin').checked = user.is_admin;
+        document.getElementById('admin-user-password').placeholder = "(Leave blank to keep current)";
+    } else {
+        title.textContent = "Create New User";
+        editIdInput.value = "";
+        document.getElementById('admin-user-fullname').value = "";
+        document.getElementById('admin-user-password').placeholder = "Password";
+    }
+    els.modalUser.classList.remove('hidden');
+};
+
+window.deleteUser = async (id) => {
+    if (!confirm("Are you sure? This will delete the user and all their projects.")) return;
+    try {
+        await apiCall(`/admin/users/${id}`, { method: 'DELETE' });
+        showToast('User deleted');
+        loadAdminUsers();
+    } catch (e) { showToast('Error deleting user', 'error'); }
+};
 
 async function handleAdminUserSubmit(e) {
     e.preventDefault();

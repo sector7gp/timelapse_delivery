@@ -668,6 +668,45 @@ body {
         width: 95%;
         padding: 20px;
     }
+
+    /* Mobile Table Redesign */
+    .admin-table thead {
+        display: none; /* Hide header labels on mobile */
+    }
+
+    .admin-table tr {
+        display: block;
+        margin-bottom: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 12px;
+        padding: 10px;
+    }
+
+    .admin-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 5px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        text-align: right;
+    }
+
+    .admin-table td:last-child {
+        border-bottom: none;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    /* Add labels for mobile */
+    .admin-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: #8b949e;
+        text-align: left;
+        margin-right: 10px;
+    }
 }
 
 @media (max-width: 480px) {

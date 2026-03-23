@@ -445,7 +445,8 @@ window.playVideo = (projectId, filename) => {
     const title = document.getElementById('video-modal-title');
     
     title.textContent = filename;
-    videoPlayer.src = `${API_URL}/projects/${projectId}/videos/${encodeURIComponent(filename)}/stream`;
+    const token = localStorage.getItem('token');
+    videoPlayer.src = `${API_URL}/projects/${projectId}/videos/${encodeURIComponent(filename)}/stream?auth_token=${token}`;
     modalVideo.classList.remove('hidden');
     videoPlayer.play();
 };

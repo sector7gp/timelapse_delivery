@@ -74,8 +74,10 @@ def download_video(project_id: int, filename: str, request: Request, current_use
     return FileResponse(path=file_path, filename=filename, media_type='application/octet-stream')
 
 @router.get("/projects/{project_id}/videos/{filename}/stream")
-def stream_video(project_id: int, filename: str, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
-    """Stream a video for in-browser playback."""
+def stream_video(project_id: int, filename: str, auth_token: Optional[str] = None, db: Session = Depends(database.get_db)):
+    """Stream a video for in-browser playback with query param auth."""
+    # We call security.get_current_user manually to handle the query param auth
+    current_user = security.get_current_user(token=None, db=db, auth_token=auth_token)
     project = crud.get_project_by_id(db, project_id=project_id)
     if not project or project.user_id != current_user.id:
         raise HTTPException(status_code=404, detail="Project not found or access denied")

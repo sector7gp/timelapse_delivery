@@ -439,8 +439,6 @@ async function loadVideos(projectId) {
     }
 }
 
-}
-
 window.playVideo = (projectId, filename) => {
     const videoPlayer = document.getElementById('video-player');
     const modalVideo = document.getElementById('modal-video');

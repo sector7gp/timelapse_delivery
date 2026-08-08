@@ -59,7 +59,7 @@ def scan_project_videos(directory_name: str):
                 "last_modified": datetime.fromtimestamp(stat.st_mtime),
                 "thumbnail": thumbnail
             })
-            print(f"DEBUG: Added video: {filename} ({stat.st_size} bytes)")
+            print(f"DEBUG: Added video: {filename} ({stat.st_size} bytes, thumbnail: {thumbnail})")
         else:
             print(f"DEBUG: Skipping non-file item: {filename}")
 

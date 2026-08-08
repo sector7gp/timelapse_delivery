@@ -2,6 +2,20 @@
 
 All notable changes to this project during this session are documented below.
 
+## [v2.6.0] - 2026-08-08
+
+### Added
+- **Developer Documentation**: 
+    - Comprehensive `CLAUDE.md` with architecture guide, quick start, development workflow, and troubleshooting.
+    - Includes FastAPI backend structure, frontend patterns, database setup, and common issues reference.
+
+### Fixed & Improved
+- **Video Listing Order**: 
+    - Videos now sort by modification date in descending order (newest first) for better UX.
+    - Prevents users from scrolling to find recent videos.
+
+---
+
 ## [v2.5.0] - 2026-03-23
 
 ### Added

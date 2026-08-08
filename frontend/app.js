@@ -485,7 +485,8 @@ function renderVideos() {
 
     els.videosGrid.innerHTML = state.videos.map(v => {
         const sizeMb = (v.size / (1024 * 1024)).toFixed(2);
-        const date = new Date(v.last_modified).toLocaleDateString();
+        const d = new Date(v.last_modified);
+        const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
         
         return `
             <div class="video-card">

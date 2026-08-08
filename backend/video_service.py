@@ -69,8 +69,11 @@ def scan_project_videos(directory_name: str):
 def generate_thumbnail(directory_name: str, filename: str) -> str:
     """Generate a thumbnail for a video file. Returns the thumbnail filename or None."""
     try:
+        print(f"DEBUG: generate_thumbnail called for {directory_name}/{filename}")
+        print(f"DEBUG: THUMBNAILS_DIR = {THUMBNAILS_DIR}")
         os.makedirs(THUMBNAILS_DIR, exist_ok=True)
         file_path = get_video_file_path(directory_name, filename)
+        print(f"DEBUG: file_path = {file_path}")
 
         if not os.path.exists(file_path):
             print(f"DEBUG: Video file not found: {file_path}")

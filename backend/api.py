@@ -92,19 +92,6 @@ def stream_video(project_id: int, filename: str, auth_token: Optional[str] = Non
         
     return FileResponse(path=file_path, media_type='video/mp4')
 
-@router.delete("/projects/{project_id}/videos/{filename}")
-def delete_video(project_id: int, filename: str, current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
-    """Delete a video securely."""
-    project = crud.get_project_by_id(db, project_id=project_id)
-    if not project or project.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Project not found or access denied")
-        
-    success = video_service.delete_video_file(project.directory_name, filename)
-    if not success:
-        raise HTTPException(status_code=404, detail="File could not be deleted or does not exist")
-        
-    return {"message": "Video successfully deleted"}
-
 # --- Dependency for Admin check ---
 def get_current_admin_user(current_user: models.User = Depends(security.get_current_active_user)):
     if not current_user.is_admin:

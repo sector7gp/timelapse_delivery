@@ -67,10 +67,14 @@ def scan_project_videos(directory_name: str):
     return videos
 
 def generate_thumbnail(directory_name: str, filename: str) -> str:
-    """Generate a thumbnail for a video file. Returns the thumbnail path."""
+    """Generate a thumbnail for a video file. Returns the thumbnail filename or None."""
     try:
         os.makedirs(THUMBNAILS_DIR, exist_ok=True)
         file_path = get_video_file_path(directory_name, filename)
+
+        if not os.path.exists(file_path):
+            print(f"DEBUG: Video file not found: {file_path}")
+            return None
 
         # Create a safe thumbnail filename
         thumb_name = f"{os.path.splitext(filename)[0]}.jpg"
@@ -78,16 +82,34 @@ def generate_thumbnail(directory_name: str, filename: str) -> str:
 
         # Only generate if doesn't exist
         if not os.path.exists(thumb_path):
-            subprocess.run([
+            print(f"DEBUG: Generating thumbnail for {filename} -> {thumb_path}")
+            result = subprocess.run([
                 'ffmpeg', '-i', file_path,
-                '-ss', '00:00:01',  # Extract frame at 1 second
+                '-ss', '00:00:01',
                 '-vframes', '1',
-                '-vf', 'scale=320:180',  # Scale to 320x180
-                '-q:v', '3',  # Quality
+                '-vf', 'scale=320:180',
+                '-q:v', '3',
+                '-y',  # Overwrite output
                 thumb_path
-            ], capture_output=True, timeout=30)
+            ], capture_output=True, timeout=30, text=True)
 
-        return thumb_name if os.path.exists(thumb_path) else None
+            if result.returncode != 0:
+                print(f"DEBUG: FFmpeg error for {filename}: {result.stderr}")
+                return None
+
+            if not os.path.exists(thumb_path):
+                print(f"DEBUG: Thumbnail was not created for {filename}")
+                return None
+
+            print(f"DEBUG: Thumbnail created successfully: {thumb_name}")
+            return thumb_name
+        else:
+            print(f"DEBUG: Thumbnail already exists: {thumb_name}")
+            return thumb_name
+
+    except subprocess.TimeoutExpired:
+        print(f"Error: FFmpeg timeout for {filename}")
+        return None
     except Exception as e:
         print(f"Error generating thumbnail for {filename}: {e}")
         return None

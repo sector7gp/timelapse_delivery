@@ -175,6 +175,55 @@ def read_logs(skip: int = 0, limit: int = 100, current_user: models.User = Depen
     """View download logs."""
     if not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Not authorized to view logs")
-        
+
     logs = crud.get_download_logs(db, skip=skip, limit=limit)
     return logs
+
+# --- Thumbnail Endpoint ---
+@router.get("/thumbnails/{thumbnail_name}")
+def get_thumbnail(thumbnail_name: str):
+    """Serve video thumbnail."""
+    thumbnail_path = os.path.join(video_service.THUMBNAILS_DIR, thumbnail_name)
+
+    # Security check
+    if not os.path.abspath(thumbnail_path).startswith(os.path.abspath(video_service.THUMBNAILS_DIR)):
+        raise HTTPException(status_code=400, detail="Invalid thumbnail path")
+
+    if not os.path.exists(thumbnail_path):
+        raise HTTPException(status_code=404, detail="Thumbnail not found")
+
+    return FileResponse(path=thumbnail_path, media_type='image/jpeg')
+
+# --- Delete List Management ---
+@router.post("/projects/{project_id}/videos/mark-for-deletion")
+def mark_videos_for_deletion(project_id: int, filenames: List[str], current_user: models.User = Depends(security.get_current_active_user), db: Session = Depends(database.get_db)):
+    """Mark videos for deletion and save to todelete.json."""
+    import json
+
+    project = crud.get_project_by_id(db, project_id=project_id)
+    if not project or project.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Project not found or access denied")
+
+    # Load existing deletion list
+    deletion_file = os.path.join(video_service.BASE_DIR, "todelete.json")
+    deletion_list = {}
+
+    if os.path.exists(deletion_file):
+        with open(deletion_file, 'r') as f:
+            deletion_list = json.load(f)
+
+    # Add new videos to deletion list for this project
+    project_key = str(project_id)
+    if project_key not in deletion_list:
+        deletion_list[project_key] = []
+
+    # Add filenames (avoid duplicates)
+    for filename in filenames:
+        if filename not in deletion_list[project_key]:
+            deletion_list[project_key].append(filename)
+
+    # Save to file
+    with open(deletion_file, 'w') as f:
+        json.dump(deletion_list, f, indent=2)
+
+    return {"message": f"Added {len(filenames)} videos to deletion list", "total_marked": len(deletion_list[project_key])}

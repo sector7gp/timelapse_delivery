@@ -1,9 +1,11 @@
 import os
+import subprocess
 from datetime import datetime
 from fastapi import HTTPException
 from pydantic import BaseModel
 
 BASE_DIR = os.environ.get("BASE_VIDEO_DIR", "/tmp/videos")
+THUMBNAILS_DIR = os.path.join(BASE_DIR, ".thumbnails")
 
 def get_project_directory(directory_name: str) -> str:
     """Safely get the absolute path for a project, preventing path traversal."""
@@ -50,10 +52,12 @@ def scan_project_videos(directory_name: str):
         file_path = os.path.join(project_path, filename)
         if os.path.isfile(file_path):
             stat = os.stat(file_path)
+            thumbnail = generate_thumbnail(directory_name, filename)
             videos.append({
                 "filename": filename,
                 "size": stat.st_size,
-                "last_modified": datetime.fromtimestamp(stat.st_mtime)
+                "last_modified": datetime.fromtimestamp(stat.st_mtime),
+                "thumbnail": thumbnail
             })
             print(f"DEBUG: Added video: {filename} ({stat.st_size} bytes)")
         else:
@@ -61,6 +65,32 @@ def scan_project_videos(directory_name: str):
 
     videos.sort(key=lambda v: v["last_modified"], reverse=True)
     return videos
+
+def generate_thumbnail(directory_name: str, filename: str) -> str:
+    """Generate a thumbnail for a video file. Returns the thumbnail path."""
+    try:
+        os.makedirs(THUMBNAILS_DIR, exist_ok=True)
+        file_path = get_video_file_path(directory_name, filename)
+
+        # Create a safe thumbnail filename
+        thumb_name = f"{os.path.splitext(filename)[0]}.jpg"
+        thumb_path = os.path.join(THUMBNAILS_DIR, thumb_name)
+
+        # Only generate if doesn't exist
+        if not os.path.exists(thumb_path):
+            subprocess.run([
+                'ffmpeg', '-i', file_path,
+                '-ss', '00:00:01',  # Extract frame at 1 second
+                '-vframes', '1',
+                '-vf', 'scale=320:180',  # Scale to 320x180
+                '-q:v', '3',  # Quality
+                thumb_path
+            ], capture_output=True, timeout=30)
+
+        return thumb_name if os.path.exists(thumb_path) else None
+    except Exception as e:
+        print(f"Error generating thumbnail for {filename}: {e}")
+        return None
 
 def delete_video_file(directory_name: str, filename: str):
     """Safely delete a video file."""

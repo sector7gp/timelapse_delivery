@@ -4,10 +4,11 @@ const API_URL = '/api';
 // State
 let state = {
     token: localStorage.getItem('token') || null,
-    user: null, 
+    user: null,
     projects: [],
     currentProject: null,
     videos: [],
+    videosMarkedForDeletion: new Set(), // Track videos marked for deletion
     adminUsers: [], // Admin only
     selectedAdminUser: null // Admin only
 };
@@ -487,15 +488,20 @@ function renderVideos() {
         const sizeMb = (v.size / (1024 * 1024)).toFixed(2);
         const d = new Date(v.last_modified);
         const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-        
+        const thumbnailSrc = v.thumbnail ? `${API_URL}/thumbnails/${v.thumbnail}` : null;
+        const isMarked = state.videosMarkedForDeletion.has(v.filename);
+
         return `
-            <div class="video-card">
-                <div class="video-icon video-icon-clickable" onclick="playVideo(${projectId}, '${v.filename}')" title="Play Video">
-                    <i class="uil uil-play-circle"></i>
-                    <div style="font-size: 0.8rem; margin-top: 5px; opacity: 0.7;">Click to Play</div>
+            <div class="video-card ${isMarked ? 'marked-for-deletion' : ''}">
+                <div class="video-preview" onclick="playVideo(${projectId}, '${v.filename}')" title="Play Video">
+                    ${thumbnailSrc ? `<img src="${thumbnailSrc}" alt="Video thumbnail" style="width: 100%; height: 100%; object-fit: cover;">` : '<div class="video-icon video-icon-clickable"><i class="uil uil-play-circle"></i></div>'}
+                    <div class="video-overlay"><i class="uil uil-play-circle"></i></div>
                 </div>
                 <div class="video-info">
-                    <h4>${v.filename}</h4>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" class="video-checkbox" data-filename="${v.filename}" ${isMarked ? 'checked' : ''}>
+                        <h4 style="margin: 0; flex: 1;">${v.filename}</h4>
+                    </div>
                     <div class="video-meta">
                         <span>${sizeMb} MB</span>
                         <span>${date}</span>
@@ -505,13 +511,23 @@ function renderVideos() {
                     <button class="btn btn-small btn-download" onclick="downloadVideo('${v.filename}')" title="Download">
                         <i class="uil uil-download-alt"></i> Download
                     </button>
-                    <button class="btn btn-small btn-delete" onclick="deleteVideo('${v.filename}')" title="Delete">
-                        <i class="uil uil-trash-alt"></i>
-                    </button>
                 </div>
             </div>
         `;
     }).join('');
+
+    // Attach checkbox event listeners
+    document.querySelectorAll('.video-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', (e) => {
+            const filename = e.target.dataset.filename;
+            if (e.target.checked) {
+                state.videosMarkedForDeletion.add(filename);
+            } else {
+                state.videosMarkedForDeletion.delete(filename);
+            }
+            updateDeletionUI();
+        });
+    });
 
     // Internal helpers attached to window for HTML access
     window.downloadVideo = async (filename) => {
@@ -535,19 +551,78 @@ function renderVideos() {
         }
     };
 
-    window.deleteVideo = async (filename) => {
-        if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
+    window.downloadVideo = async (filename) => {
         try {
-            const res = await apiCall(`/projects/${projectId}/videos/${encodeURIComponent(filename)}`, {
-                method: 'DELETE'
-            });
-            if(!res.ok) throw new Error("Failed to delete");
-            showToast('Video deleted');
-            loadVideos(projectId);
+            const res = await apiCall(`/projects/${projectId}/videos/${encodeURIComponent(filename)}/download`);
+            if(!res.ok) throw new Error("Failed to download");
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+            showToast('Download started');
         } catch (error) {
-            showToast('Error deleting file', 'error');
+            showToast('Error downloading file', 'error');
         }
     };
+}
+
+function updateDeletionUI() {
+    const count = state.videosMarkedForDeletion.size;
+    let deletionBar = document.getElementById('deletion-bar');
+
+    if (count === 0) {
+        if (deletionBar) deletionBar.remove();
+    } else {
+        if (!deletionBar) {
+            deletionBar = document.createElement('div');
+            deletionBar.id = 'deletion-bar';
+            deletionBar.className = 'deletion-bar';
+            document.body.appendChild(deletionBar);
+        }
+
+        deletionBar.innerHTML = `
+            <span>${count} video${count !== 1 ? 's' : ''} marked for deletion</span>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-small" onclick="clearMarkedForDeletion()">Clear</button>
+                <button class="btn btn-small btn-danger" onclick="saveDeletionList()">Save List</button>
+            </div>
+        `;
+    }
+}
+
+async function saveDeletionList() {
+    if (state.videosMarkedForDeletion.size === 0) {
+        showToast('No videos marked for deletion', 'error');
+        return;
+    }
+
+    const filenames = Array.from(state.videosMarkedForDeletion);
+
+    try {
+        const res = await apiCall(`/projects/${state.currentProject.id}/videos/mark-for-deletion`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(filenames)
+        });
+
+        if (!res.ok) throw new Error('Failed to save deletion list');
+        showToast(`Saved ${filenames.length} videos to deletion list`);
+        state.videosMarkedForDeletion.clear();
+        updateDeletionUI();
+    } catch (error) {
+        showToast('Error saving deletion list', 'error');
+    }
+}
+
+function clearMarkedForDeletion() {
+    state.videosMarkedForDeletion.clear();
+    updateDeletionUI();
+    renderVideos();
 }
 
 // Start app

@@ -30,22 +30,22 @@ def get_video_file_path(directory_name: str, filename: str) -> str:
     return file_path
 
 def scan_project_videos(directory_name: str):
-    """Scan the directory for videos and return their metadata."""
+    """Scan the directory for videos and return their metadata, sorted by date (newest first)."""
     project_path = get_project_directory(directory_name)
     print(f"DEBUG: Scanning path: {project_path}")
     videos = []
-    
+
     if not os.path.exists(project_path):
         print(f"DEBUG: Path DOES NOT EXIST: {project_path}")
         return videos
-        
+
     if not os.path.isdir(project_path):
         print(f"DEBUG: Path is NOT a directory: {project_path}")
         return videos
-        
+
     items = os.listdir(project_path)
     print(f"DEBUG: Found {len(items)} items in directory: {items}")
-    
+
     for filename in items:
         file_path = os.path.join(project_path, filename)
         if os.path.isfile(file_path):
@@ -58,7 +58,8 @@ def scan_project_videos(directory_name: str):
             print(f"DEBUG: Added video: {filename} ({stat.st_size} bytes)")
         else:
             print(f"DEBUG: Skipping non-file item: {filename}")
-            
+
+    videos.sort(key=lambda v: v["last_modified"], reverse=True)
     return videos
 
 def delete_video_file(directory_name: str, filename: str):

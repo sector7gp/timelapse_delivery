@@ -52,6 +52,7 @@ class Video(BaseModel):
     filename: str
     size: int
     last_modified: datetime
+    thumbnail: Optional[str] = None
 
 # --- DownloadLog Schemas ---
 class DownloadLogBase(BaseModel):

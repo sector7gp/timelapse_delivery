@@ -2,6 +2,15 @@
 
 All notable changes to this project during this session are documented below.
 
+## [v2.6.1] - 2026-08-08
+
+### Fixed & Improved
+- **Date Format**: 
+    - Video listing now displays dates in dd/mm/yyyy format (consistent with international standards).
+    - Changed from locale-dependent format to explicit formatting.
+
+---
+
 ## [v2.6.0] - 2026-08-08
 
 ### Added

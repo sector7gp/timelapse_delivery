@@ -69,11 +69,8 @@ def scan_project_videos(directory_name: str):
 def generate_thumbnail(directory_name: str, filename: str) -> str:
     """Generate a thumbnail for a video file. Returns the thumbnail filename or None."""
     try:
-        print(f"DEBUG: generate_thumbnail called for {directory_name}/{filename}")
-        print(f"DEBUG: THUMBNAILS_DIR = {THUMBNAILS_DIR}")
         os.makedirs(THUMBNAILS_DIR, exist_ok=True)
         file_path = get_video_file_path(directory_name, filename)
-        print(f"DEBUG: file_path = {file_path}")
 
         if not os.path.exists(file_path):
             print(f"DEBUG: Video file not found: {file_path}")
@@ -86,30 +83,35 @@ def generate_thumbnail(directory_name: str, filename: str) -> str:
         # Only generate if doesn't exist
         if not os.path.exists(thumb_path):
             print(f"DEBUG: Generating thumbnail for {filename} -> {thumb_path}")
-            result = subprocess.run([
-                'ffmpeg', '-i', file_path,
-                '-ss', '00:00:01',
-                '-vframes', '1',
-                '-vf', 'scale=320:180:force_original_aspect_ratio=decrease',
-                '-c:v', 'libjpeg',  # Use libjpeg encoder instead of mjpeg
-                '-q:v', '5',
-                '-y',  # Overwrite output
-                thumb_path
-            ], capture_output=True, timeout=30, text=True)
 
-            if result.returncode != 0:
-                print(f"DEBUG: FFmpeg error for {filename}: {result.stderr}")
-                return None
+            # Seek to 1s for a representative frame, but fall back to the first
+            # frame: clips shorter than 1s yield no frames (ffmpeg still exits 0),
+            # so the file's existence is what decides success, not the exit code.
+            for seek in ("00:00:01", None):
+                cmd = ['ffmpeg', '-hide_banner', '-loglevel', 'error']
+                if seek:
+                    cmd += ['-ss', seek]
+                cmd += [
+                    '-i', file_path,
+                    '-frames:v', '1',
+                    '-vf', 'scale=480:-2',  # fixed width, height follows aspect ratio
+                    '-pix_fmt', 'yuvj420p',  # mjpeg rejects non full-range YUV
+                    '-q:v', '5',
+                    '-y',
+                    thumb_path
+                ]
+                result = subprocess.run(cmd, capture_output=True, timeout=30, text=True)
+                if os.path.exists(thumb_path):
+                    break
+                print(f"DEBUG: No frame at seek={seek} for {filename}: {result.stderr.strip()}")
 
             if not os.path.exists(thumb_path):
                 print(f"DEBUG: Thumbnail was not created for {filename}")
                 return None
 
             print(f"DEBUG: Thumbnail created successfully: {thumb_name}")
-            return thumb_name
-        else:
-            print(f"DEBUG: Thumbnail already exists: {thumb_name}")
-            return thumb_name
+
+        return thumb_name
 
     except subprocess.TimeoutExpired:
         print(f"Error: FFmpeg timeout for {filename}")

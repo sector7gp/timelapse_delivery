@@ -2,6 +2,29 @@
 
 All notable changes to this project during this session are documented below.
 
+## [v2.7.0] - 2026-08-08
+
+### Added
+- **Video Thumbnails**: 
+    - Automatic thumbnail generation from first frame of each video using FFmpeg.
+    - Thumbnails stored in `.thumbnails/` directory for caching.
+    - `/api/thumbnails/{filename}` endpoint for serving preview images.
+
+- **Video Deletion List Management**:
+    - Replaced instant delete button with checkbox marking system.
+    - Users can mark multiple videos for deletion without immediate action.
+    - Deletion list saved to `todelete.json` in BASE_VIDEO_DIR.
+    - Bottom UI bar shows count and provides Save/Clear buttons.
+    - Enables admin review before executing bulk deletions.
+
+### Improved
+- **Video Card UI**: 
+    - Displays thumbnail preview instead of play icon.
+    - Overlay with play icon appears on hover.
+    - More visual and accessible video browsing experience.
+
+---
+
 ## [v2.6.1] - 2026-08-08
 
 ### Fixed & Improved

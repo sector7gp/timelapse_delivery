@@ -87,8 +87,9 @@ def generate_thumbnail(directory_name: str, filename: str) -> str:
                 'ffmpeg', '-i', file_path,
                 '-ss', '00:00:01',
                 '-vframes', '1',
-                '-vf', 'scale=320:180',
-                '-q:v', '3',
+                '-vf', 'scale=320:180:force_original_aspect_ratio=decrease',
+                '-c:v', 'libjpeg',  # Use libjpeg encoder instead of mjpeg
+                '-q:v', '5',
                 '-y',  # Overwrite output
                 thumb_path
             ], capture_output=True, timeout=30, text=True)
